@@ -23,6 +23,8 @@
             android:id="@+id/ui_back_button"
             android:contentDescription="back"
             android:src="@drawable/cardboard_oss_quantum_ic_close_white_24"
+            android:layout_marginLeft="8dp"
+            android:layout_marginTop="8dp"
             android:layout_gravity="start|top"
             android:onClick="closeSample"/>
     </FrameLayout>
@@ -47,6 +49,8 @@
             android:id="@+id/ui_settings_button"
             android:contentDescription="settings"
             android:src="@drawable/cardboard_oss_quantum_ic_settings_white_24"
+            android:layout_marginRight="8dp"
+            android:layout_marginTop="8dp"
             android:layout_gravity="end|top"
             android:onClick="showSettings"/>
     </FrameLayout>
