@@ -4,6 +4,7 @@
 
 #include "gles3jni.h"
 #include <EGL/egl.h>
+#include <string.h>
 
 #define STR(s) #s
 #define STRV(s) STR(s)
@@ -13,7 +14,7 @@
 
 static const char VERTEX_SHADER[] =
         "#version 300 es\n"
-        "layout(location = " STRV(POS_ATTRIB) ") in vec2 pos;\n"
+        "layout(location = " STRV(POS_ATTRIB) ") in vec4 pos;\n"
         "layout(location=" STRV(COLOR_ATTRIB) ") in vec4 color;\n"
         "out vec4 vColor;\n"
         "uniform mat4 uMatrix;\n"
@@ -133,7 +134,9 @@ CubeRenderer::CubeRenderer()
             mColorVBO(0),
             mVAO(0)
 {
-
+    memset(mViewMatrix, 0, sizeof(mViewMatrix));
+    memset(mProjectionMatrix, 0, sizeof(mProjectionMatrix));
+    memset(mMVPMatrix, 0, sizeof(mMVPMatrix));
 }
 
 CubeRenderer::~CubeRenderer() {
@@ -155,43 +158,88 @@ bool CubeRenderer::init() {
     if (!mProgram)
         return false;
 
-//    glGenBuffers(VB_COUNT, mVB);
-//    glBindBuffer(GL_ARRAY_BUFFER, mVB[VB_INSTANCE]);
-//    glBufferData(GL_ARRAY_BUFFER, sizeof(QUAD), &QUAD[0], GL_STATIC_DRAW);
-//    glBindBuffer(GL_ARRAY_BUFFER, mVB[VB_SCALEROT]);
-//    glBufferData(GL_ARRAY_BUFFER, MAX_INSTANCES * 4*sizeof(float), NULL, GL_DYNAMIC_DRAW);
-//    glBindBuffer(GL_ARRAY_BUFFER, mVB[VB_OFFSET]);
-//    glBufferData(GL_ARRAY_BUFFER, MAX_INSTANCES * 2*sizeof(float), NULL, GL_STATIC_DRAW);
-//
-//    glGenVertexArrays(1, &mVBState);
-//    glBindVertexArray(mVBState);
-//
-//    glBindBuffer(GL_ARRAY_BUFFER, mVB[VB_INSTANCE]);
-//    glVertexAttribPointer(POS_ATTRIB, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, pos));
-//    glVertexAttribPointer(COLOR_ATTRIB, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, rgba));
-//    glEnableVertexAttribArray(POS_ATTRIB);
-//    glEnableVertexAttribArray(COLOR_ATTRIB);
-//
-//    glBindBuffer(GL_ARRAY_BUFFER, mVB[VB_SCALEROT]);
-//    glVertexAttribPointer(SCALEROT_ATTRIB, 4, GL_FLOAT, GL_FALSE, 4*sizeof(float), 0);
-//    glEnableVertexAttribArray(SCALEROT_ATTRIB);
-//    glVertexAttribDivisor(SCALEROT_ATTRIB, 1);
-//
-//    glBindBuffer(GL_ARRAY_BUFFER, mVB[VB_OFFSET]);
-//    glVertexAttribPointer(OFFSET_ATTRIB, 2, GL_FLOAT, GL_FALSE, 2*sizeof(float), 0);
-//    glEnableVertexAttribArray(OFFSET_ATTRIB);
-//    glVertexAttribDivisor(OFFSET_ATTRIB, 1);
+    GLuint posBuffers[1];
+    glGenBuffers(1, posBuffers);
+    mPositionVBO = posBuffers[0];
+
+    glBindBuffer(GL_ARRAY_BUFFER, mPositionVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(COORDS), &COORDS[0], GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    GLuint colorBuffers[1];
+    glGenBuffers(1, colorBuffers);
+    mColorVBO = colorBuffers[0];
+
+    glBindBuffer(GL_ARRAY_BUFFER, mColorVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(COLORS), &COLORS[0], GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    GLuint vaoBuffers[1];
+    glGenVertexArrays(1, vaoBuffers);
+    mVAO = vaoBuffers[0];
+
+    glBindVertexArray(mVAO);
+
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, mPositionVBO);
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glEnableVertexAttribArray(1);
+    glBindBuffer(GL_ARRAY_BUFFER, mColorVBO);
+    glVertexAttribPointer(1, 4, GL_FLOAT, false, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glBindVertexArray(0);
 
     ALOGV("Using OpenGL ES 3.0 renderer");
     return true;
 }
 
 void CubeRenderer::resize(int w, int h) {
+    glViewport(0, 0, w, h);
+    float ratio = (float) w / (float) h;
 
+//    Matrix.frustumM(mProjectionMatrix, 0, -ratio, ratio, -1, 1, 3, 7);
+//    Matrix.setLookAtM(mViewMatrix, 0,
+//                      0f, 0f, 5f,
+//                      0f, 0f, 0f,
+//                      0f, 1f, 0f);
+//    Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
 }
 
 void CubeRenderer::render() {
-//    glUseProgram(mProgram);
-//    glBindVertexArray(mVBState);
-//    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, numInstances);
+    glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glUseProgram(mProgram);
+
+//    Matrix.rotateM(mMVPMatrix, 0, 0.5f, 0.5f, 0.5f, 0.0f);
+
+    mMVPMatrix[0] = 5.497117;
+    mMVPMatrix[1] = 5.7131045E-5;
+    mMVPMatrix[2] = 0.015426481;
+    mMVPMatrix[3] = 0.0061705923;
+
+    mMVPMatrix[4] = 1.0468735E-4;
+    mMVPMatrix[5] = 2.9999428;
+    mMVPMatrix[6] = -0.015426481;
+    mMVPMatrix[7] = -0.0061705923;
+
+    mMVPMatrix[8] = 0.033921115;
+    mMVPMatrix[9] = -0.018511776;
+    mMVPMatrix[10] = -2.4999049;
+    mMVPMatrix[11] = -0.9999619;
+
+    mMVPMatrix[12] = 0;
+    mMVPMatrix[13] = 0;
+    mMVPMatrix[14] = 2.0;
+    mMVPMatrix[15] = 5.0;
+
+    int uMatrixLocation = glGetUniformLocation(mProgram, "uMatrix");
+    glUniformMatrix4fv(uMatrixLocation, 1, false, mMVPMatrix);
+
+    glBindVertexArray(mVAO);
+    glDrawArrays(GL_LINES, 0, 24);
+    glBindVertexArray(0);
 }
