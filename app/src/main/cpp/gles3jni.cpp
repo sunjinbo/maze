@@ -118,6 +118,7 @@ extern "C" {
     JNIEXPORT void JNICALL Java_com_vr_maze_MazeJNILib_init(JNIEnv* env, jobject obj);
     JNIEXPORT void JNICALL Java_com_vr_maze_MazeJNILib_resize(JNIEnv* env, jobject obj, jint width, jint height);
     JNIEXPORT void JNICALL Java_com_vr_maze_MazeJNILib_step(JNIEnv* env, jobject obj);
+    JNIEXPORT void JNICALL Java_com_vr_maze_MazeJNILib_switchViewer(JNIEnv* env, jobject obj);
 };
 
 #if !defined(DYNAMIC_ES3)
@@ -153,4 +154,9 @@ Java_com_vr_maze_MazeJNILib_step(JNIEnv* env, jobject obj) {
     if (g_renderer) {
         g_renderer->render();
     }
+}
+
+JNIEXPORT void JNICALL
+Java_com_vr_maze_MazeJNILib_switchViewer(JNIEnv* env, jobject obj) {
+
 }
