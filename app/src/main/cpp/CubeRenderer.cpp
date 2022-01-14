@@ -121,11 +121,9 @@ private:
     GLuint mColorVBO;
     GLuint mVAO;
 
-    float mViewMatrix[16];
-    float mProjectionMatrix[16];
-    float mMVPMatrix[16];
-
-    glm::mat4 Projection;
+    glm::mat4 mViewMatrix;
+    glm::mat4 mProjectionMatrix;
+    glm::mat4 mMVPMatrix;
 };
 
 Renderer* createCubeRenderer() {
@@ -144,9 +142,6 @@ CubeRenderer::CubeRenderer()
             mColorVBO(0),
             mVAO(0)
 {
-    memset(mViewMatrix, 0, sizeof(mViewMatrix));
-    memset(mProjectionMatrix, 0, sizeof(mProjectionMatrix));
-    memset(mMVPMatrix, 0, sizeof(mMVPMatrix));
 }
 
 CubeRenderer::~CubeRenderer() {
@@ -210,12 +205,13 @@ void CubeRenderer::resize(int w, int h) {
     glViewport(0, 0, w, h);
     float ratio = (float) w / (float) h;
 
-//    Matrix.frustumM(mProjectionMatrix, 0, -ratio, ratio, -1, 1, 3, 7);
-//    Matrix.setLookAtM(mViewMatrix, 0,
-//                      0f, 0f, 5f,
-//                      0f, 0f, 0f,
-//                      0f, 1f, 0f);
-//    Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
+    mProjectionMatrix = glm::frustum(-ratio, ratio, -1.0f, 1.0f, 3.0f, 7.0f);
+    glm::vec3 eye(0.0f,0.0f,5.0f);
+    glm::vec3 look(0.0f,0.0f,0.0f);
+    glm::vec3 up(0.0f,1.0f,0.0f);
+    mViewMatrix = glm::lookAt(eye, look, up);
+
+    mMVPMatrix = mProjectionMatrix * mViewMatrix;
 }
 
 void CubeRenderer::render() {
@@ -224,30 +220,11 @@ void CubeRenderer::render() {
 
     glUseProgram(mProgram);
 
-//    Matrix.rotateM(mMVPMatrix, 0, 0.5f, 0.5f, 0.5f, 0.0f);
-
-    mMVPMatrix[0] = 5.497117;
-    mMVPMatrix[1] = 5.7131045E-5;
-    mMVPMatrix[2] = 0.015426481;
-    mMVPMatrix[3] = 0.0061705923;
-
-    mMVPMatrix[4] = 1.0468735E-4;
-    mMVPMatrix[5] = 2.9999428;
-    mMVPMatrix[6] = -0.015426481;
-    mMVPMatrix[7] = -0.0061705923;
-
-    mMVPMatrix[8] = 0.033921115;
-    mMVPMatrix[9] = -0.018511776;
-    mMVPMatrix[10] = -2.4999049;
-    mMVPMatrix[11] = -0.9999619;
-
-    mMVPMatrix[12] = 0;
-    mMVPMatrix[13] = 0;
-    mMVPMatrix[14] = 2.0;
-    mMVPMatrix[15] = 5.0;
+    glm::vec3 axis(0.5f,1.0f,0.5f);
+    mMVPMatrix = glm::rotate(mMVPMatrix, 0.01f, axis);
 
     int uMatrixLocation = glGetUniformLocation(mProgram, "uMatrix");
-    glUniformMatrix4fv(uMatrixLocation, 1, false, mMVPMatrix);
+    glUniformMatrix4fv(uMatrixLocation, 1, false, glm::value_ptr(mMVPMatrix));
 
     glBindVertexArray(mVAO);
     glDrawArrays(GL_LINES, 0, 24);
