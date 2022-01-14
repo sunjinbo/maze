@@ -34,6 +34,8 @@ else ()
   set(OPENGL_LIB GLESv3)
 endif (${ANDROID_PLATFORM_LEVEL} LESS 12)
 
+add_subdirectory(glm)
+
 set(libs_dir ${CMAKE_CURRENT_SOURCE_DIR}/libraries)
 
 add_library(gles3jni SHARED
@@ -51,4 +53,5 @@ target_link_libraries(gles3jni
             EGL
             log
             m
+            glm
             ${libs_dir}/jni/${ANDROID_ABI}/libcardboard_api.so)

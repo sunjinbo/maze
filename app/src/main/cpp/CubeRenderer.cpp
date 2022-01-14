@@ -7,6 +7,13 @@
 #include <EGL/egl.h>
 #include <string.h>
 
+#include <GLES2/gl2.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/rotate_vector.hpp>
+#include <glm/gtx/closest_point.hpp>
+
 #define STR(s) #s
 #define STRV(s) STR(s)
 
@@ -117,6 +124,8 @@ private:
     float mViewMatrix[16];
     float mProjectionMatrix[16];
     float mMVPMatrix[16];
+
+    glm::mat4 Projection;
 };
 
 Renderer* createCubeRenderer() {
