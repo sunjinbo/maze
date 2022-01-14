@@ -3,6 +3,7 @@
 //
 
 #include "gles3jni.h"
+#include "cardboard.h"
 #include <EGL/egl.h>
 #include <string.h>
 

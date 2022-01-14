@@ -21,6 +21,7 @@ cmake_minimum_required(VERSION 3.4.1)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fno-rtti -fno-exceptions -Wall")
+
 if (${ANDROID_PLATFORM_LEVEL} LESS 12)
   message(FATAL_ERROR "OpenGL 2 is not supported before API level 11 \
                       (currently using ${ANDROID_PLATFORM_LEVEL}).")
@@ -33,11 +34,15 @@ else ()
   set(OPENGL_LIB GLESv3)
 endif (${ANDROID_PLATFORM_LEVEL} LESS 12)
 
+set(libs_dir ${CMAKE_CURRENT_SOURCE_DIR}/libraries)
+
 add_library(gles3jni SHARED
             ${GL3STUB_SRC}
             gles3jni.cpp
             CubeRenderer.cpp
         )
+
+target_include_directories(gles3jni PRIVATE ${libs_dir})
 
 # Include libraries needed for gles3jni lib
 target_link_libraries(gles3jni
@@ -45,4 +50,5 @@ target_link_libraries(gles3jni
             android
             EGL
             log
-            m)
+            m
+            ${libs_dir}/jni/${ANDROID_ABI}/libcardboard_api.so)
