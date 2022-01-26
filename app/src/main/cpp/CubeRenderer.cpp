@@ -110,9 +110,12 @@ public:
     CubeRenderer();
     ~CubeRenderer();
 
-    virtual bool init();
+    virtual bool create();
+    virtual void resume();
+    virtual void pause();
+    virtual void destroy();
     virtual void resize(int w, int h);
-    virtual void render();
+    virtual void step();
 
 private:
     const EGLContext mEglContext;
@@ -127,12 +130,7 @@ private:
 };
 
 Renderer* createCubeRenderer() {
-    CubeRenderer* renderer = new CubeRenderer;
-    if (!renderer->init()) {
-        delete renderer;
-        return NULL;
-    }
-    return renderer;
+    return new CubeRenderer;
 }
 
 CubeRenderer::CubeRenderer()
@@ -158,7 +156,7 @@ CubeRenderer::~CubeRenderer() {
 //    glDeleteProgram(mProgram);
 }
 
-bool CubeRenderer::init() {
+bool CubeRenderer::create() {
     mProgram = createProgram(VERTEX_SHADER, FRAGMENT_SHADER);
     if (!mProgram)
         return false;
@@ -198,7 +196,20 @@ bool CubeRenderer::init() {
     glBindVertexArray(0);
 
     ALOGV("Using OpenGL ES 3.0 renderer");
+
     return true;
+}
+
+void CubeRenderer::resume() {
+
+}
+
+void CubeRenderer::pause() {
+
+}
+
+void CubeRenderer::destroy() {
+
 }
 
 void CubeRenderer::resize(int w, int h) {
@@ -214,7 +225,7 @@ void CubeRenderer::resize(int w, int h) {
     mMVPMatrix = mProjectionMatrix * mViewMatrix;
 }
 
-void CubeRenderer::render() {
+void CubeRenderer::step() {
     glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

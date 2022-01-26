@@ -54,9 +54,12 @@ extern GLuint createProgram(const char* vtxSrc, const char* fragSrc);
 
 class Renderer {
 public:
-    virtual bool init() = 0;
+    virtual bool create() = 0;
+    virtual void resume() = 0;
+    virtual void pause() = 0;
+    virtual void destroy() = 0;
     virtual void resize(int w, int h) = 0;
-    virtual void render() = 0;
+    virtual void step() = 0;
 };
 
 extern Renderer* createCubeRenderer();
