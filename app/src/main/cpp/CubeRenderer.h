@@ -14,10 +14,11 @@
 #include <glm/gtx/closest_point.hpp>
 
 #include "Renderer.h"
+#include "cardboard.h"
 
 class CubeRenderer: public Renderer {
 public:
-    CubeRenderer();
+    CubeRenderer(JavaVM* vm, jobject obj);
     ~CubeRenderer();
 
     virtual bool create();
@@ -37,10 +38,23 @@ private:
     glm::mat4 mViewMatrix;
     glm::mat4 mProjectionMatrix;
     glm::mat4 mMVPMatrix;
-};
 
-Renderer* createCubeRenderer() {
-    return new CubeRenderer;
-}
+    CardboardHeadTracker* mHeadTracker;
+    CardboardLensDistortion* mLensDistortion;
+    CardboardDistortionRenderer* mDistortionRenderer;
+
+    CardboardEyeTextureDescription mLeftEyeTextureDescription;
+    CardboardEyeTextureDescription mRightEyeTextureDescription;
+
+    bool mScreenParamsChanged;
+    bool mDeviceParamsChanged;
+
+    int mScreenWidth;
+    int mScreenHeight;
+
+    GLuint mDepthRenderBuffer;      // depth buffer
+    GLuint mFramebuffer;            // framebuffer object
+    GLuint mDistortionTextureId;    // distortion texture
+};
 
 #endif //MAZE_CUBERENDERER_H

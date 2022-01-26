@@ -17,6 +17,7 @@
 #ifndef GLES3JNI_H
 #define GLES3JNI_H 1
 
+#include <jni.h>
 #include <android/log.h>
 #include <math.h>
 
@@ -50,7 +51,5 @@
 extern bool checkGlError(const char* funcName);
 extern GLuint createShader(GLenum shaderType, const char* src);
 extern GLuint createProgram(const char* vtxSrc, const char* fragSrc);
-
-extern Renderer* createCubeRenderer();
 
 #endif // GLES3JNI_H

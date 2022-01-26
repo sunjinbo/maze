@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#include <jni.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
 #include "gles3jni.h"
+#include "RendererFactory.h"
 
 bool checkGlError(const char* funcName) {
     GLint err = glGetError();
@@ -115,6 +115,7 @@ static void printGlString(const char* name, GLenum s) {
 static Renderer* g_renderer = NULL;
 
 extern "C" {
+    JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved);
     JNIEXPORT void JNICALL Java_com_vr_maze_MazeJNILib_init(JNIEnv* env, jobject obj);
     JNIEXPORT void JNICALL Java_com_vr_maze_MazeJNILib_create(JNIEnv* env, jobject obj);
     JNIEXPORT void JNICALL Java_com_vr_maze_MazeJNILib_resume(JNIEnv* env, jobject obj);
@@ -131,6 +132,13 @@ static GLboolean gl3stubInit() {
 }
 #endif
 
+JavaVM* javaVm = nullptr;
+
+JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* /*reserved*/) {
+    javaVm = vm;
+    return JNI_VERSION_1_6;
+}
+
 JNIEXPORT void JNICALL
 Java_com_vr_maze_MazeJNILib_init(JNIEnv* env, jobject obj) {
     if (g_renderer) {
@@ -143,7 +151,7 @@ Java_com_vr_maze_MazeJNILib_init(JNIEnv* env, jobject obj) {
     printGlString("Renderer", GL_RENDERER);
     printGlString("Extensions", GL_EXTENSIONS);
 
-    g_renderer = createCubeRenderer();
+    g_renderer = RendererFactory::getRenderer(javaVm, obj);
 }
 
 JNIEXPORT void JNICALL

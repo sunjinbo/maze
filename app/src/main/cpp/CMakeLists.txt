@@ -42,6 +42,7 @@ add_library(gles3jni SHARED
             ${GL3STUB_SRC}
             gles3jni.cpp
             CubeRenderer.cpp
+            RendererFactory.cpp
         )
 
 target_include_directories(gles3jni PRIVATE ${libs_dir})

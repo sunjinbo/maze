@@ -99,13 +99,25 @@ static const float COLORS[96] = {
         0.77f, 0.12f, 0.23f, 1.0f // C
 };
 
-CubeRenderer::CubeRenderer()
+CubeRenderer::CubeRenderer(JavaVM* vm, jobject obj)
         :   mEglContext(eglGetCurrentContext()),
             mProgram(0),
             mPositionVBO(0),
             mColorVBO(0),
-            mVAO(0)
+            mVAO(0),
+            mHeadTracker(nullptr),
+            mLensDistortion(nullptr),
+            mDistortionRenderer(nullptr),
+            mScreenParamsChanged(false),
+            mDeviceParamsChanged(false),
+            mScreenWidth(0),
+            mScreenHeight(0),
+            mDepthRenderBuffer(0),
+            mFramebuffer(0),
+            mDistortionTextureId(0)
 {
+    Cardboard_initializeAndroid(vm, obj);
+    mHeadTracker = CardboardHeadTracker_create();
 }
 
 CubeRenderer::~CubeRenderer() {
