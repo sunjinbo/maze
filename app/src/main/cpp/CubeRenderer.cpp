@@ -4,15 +4,9 @@
 
 #include "gles3jni.h"
 #include "cardboard.h"
-#include <EGL/egl.h>
-#include <string.h>
+#include "CubeRenderer.h"
 
-#include <GLES2/gl2.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtx/rotate_vector.hpp>
-#include <glm/gtx/closest_point.hpp>
+#include <string.h>
 
 #define STR(s) #s
 #define STRV(s) STR(s)
@@ -104,34 +98,6 @@ static const float COLORS[96] = {
         0.64f, 0.0f, 0.43f, 1.0f, // H
         0.77f, 0.12f, 0.23f, 1.0f // C
 };
-
-class CubeRenderer: public Renderer {
-public:
-    CubeRenderer();
-    ~CubeRenderer();
-
-    virtual bool create();
-    virtual void resume();
-    virtual void pause();
-    virtual void destroy();
-    virtual void resize(int w, int h);
-    virtual void step();
-
-private:
-    const EGLContext mEglContext;
-    GLuint mProgram;
-    GLuint mPositionVBO;
-    GLuint mColorVBO;
-    GLuint mVAO;
-
-    glm::mat4 mViewMatrix;
-    glm::mat4 mProjectionMatrix;
-    glm::mat4 mMVPMatrix;
-};
-
-Renderer* createCubeRenderer() {
-    return new CubeRenderer;
-}
 
 CubeRenderer::CubeRenderer()
         :   mEglContext(eglGetCurrentContext()),
