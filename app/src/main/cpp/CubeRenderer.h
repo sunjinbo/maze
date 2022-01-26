@@ -29,6 +29,21 @@ public:
     virtual void step();
 
 private:
+    bool updateDeviceParams();
+    void setupGL();
+    void teardownGL();
+
+private:
+    /**
+     * Default near clip plane z-axis coordinate.
+     */
+    static constexpr float kZNear = 0.1f;
+
+    /**
+     * Default far clip plane z-axis coordinate.
+     */
+    static constexpr float kZFar = 100.f;
+
     const EGLContext mEglContext;
     GLuint mProgram;
     GLuint mPositionVBO;
@@ -55,6 +70,9 @@ private:
     GLuint mDepthRenderBuffer;      // depth buffer
     GLuint mFramebuffer;            // framebuffer object
     GLuint mDistortionTextureId;    // distortion texture
+
+    float projection_matrices_[2][16];
+    float eye_matrices_[2][16];
 };
 
 #endif //MAZE_CUBERENDERER_H

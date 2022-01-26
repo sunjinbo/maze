@@ -5,6 +5,7 @@
 #include "gles3jni.h"
 #include "cardboard.h"
 #include "CubeRenderer.h"
+#include "util.h"
 
 #include <string.h>
 
@@ -13,6 +14,25 @@
 
 #define POS_ATTRIB 0
 #define COLOR_ATTRIB 1
+
+// The objects are about 1 meter in radius, so the min/max target distance are
+// set so that the objects are always within the room (which is about 5 meters
+// across) and the reticle is always closer than any objects.
+constexpr float kMinTargetDistance = 2.5f;
+constexpr float kMaxTargetDistance = 3.5f;
+constexpr float kMinTargetHeight = 0.5f;
+constexpr float kMaxTargetHeight = kMinTargetHeight + 3.0f;
+
+constexpr float kDefaultFloorHeight = -1.7f;
+
+constexpr uint64_t kPredictionTimeWithoutVsyncNanos = 50000000;
+
+// Angle threshold for determining whether the controller is pointing at the
+// object.
+constexpr float kAngleLimit = 0.2f;
+
+// Number of different possible targets
+constexpr int kTargetMeshCount = 3;
 
 static const char VERTEX_SHADER[] =
         "#version 300 es\n"
@@ -179,18 +199,37 @@ bool CubeRenderer::create() {
 }
 
 void CubeRenderer::resume() {
+    CardboardHeadTracker_resume(mHeadTracker);
 
+    // Parameters may have changed.
+    mDeviceParamsChanged = true;
+
+    // Check for device parameters existence in external storage. If they're
+    // missing, we must scan a Cardboard QR code and save the obtained parameters.
+    uint8_t* buffer;
+    int size;
+    CardboardQrCode_getSavedDeviceParams(&buffer, &size);
+    if (size == 0) {
+        CardboardQrCode_scanQrCodeAndSaveDeviceParams();
+    }
+    CardboardQrCode_destroy(buffer);
 }
 
 void CubeRenderer::pause() {
-
+    CardboardHeadTracker_pause(mHeadTracker);
 }
 
 void CubeRenderer::destroy() {
-
+    CardboardHeadTracker_destroy(mHeadTracker);
+    CardboardLensDistortion_destroy(mLensDistortion);
+    CardboardDistortionRenderer_destroy(mDistortionRenderer);
 }
 
 void CubeRenderer::resize(int w, int h) {
+    mScreenWidth = w;
+    mScreenHeight = h;
+    mScreenParamsChanged = true;
+
     glViewport(0, 0, w, h);
     float ratio = (float) w / (float) h;
 
@@ -204,6 +243,10 @@ void CubeRenderer::resize(int w, int h) {
 }
 
 void CubeRenderer::step() {
+    if (!updateDeviceParams()) {
+        return;
+    }
+
     glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -218,4 +261,119 @@ void CubeRenderer::step() {
     glBindVertexArray(mVAO);
     glDrawArrays(GL_LINES, 0, 24);
     glBindVertexArray(0);
+}
+
+bool CubeRenderer::updateDeviceParams() {
+    if (!mScreenParamsChanged && !mDeviceParamsChanged) {
+        return true;
+    }
+
+    // Get saved device parameters
+    uint8_t* buffer;
+    int size;
+    CardboardQrCode_getSavedDeviceParams(&buffer, &size);
+
+    // If there are no parameters saved yet, returns false.
+    if (size == 0) {
+        return false;
+    }
+
+    CardboardLensDistortion_destroy(mLensDistortion);
+    mLensDistortion = CardboardLensDistortion_create(
+            buffer, size, mScreenWidth, mScreenHeight);
+
+    CardboardQrCode_destroy(buffer);
+
+    setupGL();
+
+    CardboardDistortionRenderer_destroy(mDistortionRenderer);
+    mDistortionRenderer = CardboardOpenGlEs2DistortionRenderer_create();
+
+    CardboardMesh left_mesh;
+    CardboardMesh right_mesh;
+    CardboardLensDistortion_getDistortionMesh(mLensDistortion, kLeft,
+                                              &left_mesh);
+    CardboardLensDistortion_getDistortionMesh(mLensDistortion, kRight,
+                                              &right_mesh);
+
+    CardboardDistortionRenderer_setMesh(mDistortionRenderer, &left_mesh, kLeft);
+    CardboardDistortionRenderer_setMesh(mDistortionRenderer, &right_mesh,
+                                        kRight);
+
+    // Get eye matrices
+    CardboardLensDistortion_getEyeFromHeadMatrix(mLensDistortion, kLeft,
+                                                 eye_matrices_[0]);
+    CardboardLensDistortion_getEyeFromHeadMatrix(mLensDistortion, kRight,
+                                                 eye_matrices_[1]);
+    CardboardLensDistortion_getProjectionMatrix(mLensDistortion, kLeft, kZNear,
+                                                kZFar, projection_matrices_[0]);
+    CardboardLensDistortion_getProjectionMatrix(mLensDistortion, kRight, kZNear,
+                                                kZFar, projection_matrices_[1]);
+
+    mScreenParamsChanged = false;
+    mDeviceParamsChanged = false;
+
+    return true;
+}
+
+void CubeRenderer::setupGL() {
+    LOGD("GL SETUP");
+
+    if (mFramebuffer != 0) {
+        teardownGL();
+    }
+
+    // Create render texture.
+    glGenTextures(1, &mDistortionTextureId);
+    glBindTexture(GL_TEXTURE_2D, mDistortionTextureId);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mScreenWidth, mScreenHeight, 0,
+                 GL_RGB, GL_UNSIGNED_BYTE, 0);
+
+    mLeftEyeTextureDescription.texture = mDistortionTextureId;
+    mLeftEyeTextureDescription.left_u = 0;
+    mLeftEyeTextureDescription.right_u = 0.5;
+    mLeftEyeTextureDescription.top_v = 1;
+    mLeftEyeTextureDescription.bottom_v = 0;
+
+    mRightEyeTextureDescription.texture = mDistortionTextureId;
+    mRightEyeTextureDescription.left_u = 0.5;
+    mRightEyeTextureDescription.right_u = 1;
+    mRightEyeTextureDescription.top_v = 1;
+    mRightEyeTextureDescription.bottom_v = 0;
+
+    // Generate depth buffer to perform depth test.
+    glGenRenderbuffers(1, &mDepthRenderBuffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, mDepthRenderBuffer);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, mScreenWidth,
+                          mScreenHeight);
+    ndk_maze_cardboard::CHECKGLERROR("Create Render buffer");
+
+    // Create render target.
+    glGenFramebuffers(1, &mFramebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, mFramebuffer);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                           mDistortionTextureId, 0);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                              GL_RENDERBUFFER, mDepthRenderBuffer);
+
+    ndk_maze_cardboard::CHECKGLERROR("GlSetup");
+}
+
+void CubeRenderer::teardownGL() {
+    if (mFramebuffer == 0) {
+        return;
+    }
+    glDeleteRenderbuffers(1, &mDepthRenderBuffer);
+    mDepthRenderBuffer = 0;
+    glDeleteFramebuffers(1, &mFramebuffer);
+    mFramebuffer = 0;
+    glDeleteTextures(1, &mDistortionTextureId);
+    mDistortionTextureId = 0;
+
+    ndk_maze_cardboard::CHECKGLERROR("GlTeardown");
 }
