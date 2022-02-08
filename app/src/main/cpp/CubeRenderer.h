@@ -15,6 +15,7 @@
 
 #include "Renderer.h"
 #include "cardboard.h"
+#include "Matrix4x4.h"
 
 class CubeRenderer: public Renderer {
 public:
@@ -33,6 +34,8 @@ private:
     bool updateDeviceParams();
     void setupGL();
     void teardownGL();
+    void drawCube();
+    Matrix4x4 getPose();
 
 private:
     /**
@@ -45,7 +48,7 @@ private:
      */
     static constexpr float kZFar = 100.f;
 
-    const EGLContext mEglContext;
+    EGLContext mEglContext;
     GLuint mProgram;
     GLuint mPositionVBO;
     GLuint mColorVBO;
@@ -75,7 +78,7 @@ private:
     float projection_matrices_[2][16];
     float eye_matrices_[2][16];
 
-    JavaVM* javaVm;
+    Matrix4x4 mHeadView;
 };
 
 #endif //MAZE_CUBERENDERER_H

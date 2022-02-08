@@ -7,6 +7,8 @@
 #include "CubeRenderer.h"
 
 #include <string.h>
+#include <array>
+#include <cmath>
 
 #define STR(s) #s
 #define STRV(s) STR(s)
@@ -23,6 +25,8 @@ constexpr float kMinTargetHeight = 0.5f;
 constexpr float kMaxTargetHeight = kMinTargetHeight + 3.0f;
 
 constexpr float kDefaultFloorHeight = -1.7f;
+
+static constexpr uint64_t kNanosInSeconds = 1000000000;
 
 constexpr uint64_t kPredictionTimeWithoutVsyncNanos = 50000000;
 
@@ -247,9 +251,49 @@ void CubeRenderer::step() {
         return;
     }
 
-    glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // Update Head Pose.
+    mHeadView = getPose();
 
+    // Incorporate the floor height into the head_view
+    mHeadView = mHeadView * GetTranslationMatrix({0.0f, kDefaultFloorHeight, 0.0f});
+
+    // Bind buffer
+    glBindFramebuffer(GL_FRAMEBUFFER, mFramebuffer);
+
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    glDisable(GL_SCISSOR_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClearColor(0.3, 0.3, 0.3, 1.0);
+
+    // Draw eyes views
+    for (int eye = 0; eye < 2; ++eye) {
+        glViewport(eye == kLeft ? 0 : mScreenWidth / 2, 0, mScreenWidth / 2,
+                   mScreenHeight);
+
+        Matrix4x4 eye_matrix = GetMatrixFromGlArray(eye_matrices_[eye]);
+        Matrix4x4 eye_view = eye_matrix * mHeadView;
+
+//        Matrix4x4 projection_matrix =
+//                Matrix4x4::GetMatrixFromGlArray(projection_matrices_[eye]);
+//        Matrix4x4 modelview_target = eye_view * model_target_;
+//        modelview_projection_target_ = projection_matrix * modelview_target;
+//        modelview_projection_room_ = projection_matrix * eye_view;
+
+        // Draw cube
+        drawCube();
+    }
+
+    // Render
+    CardboardDistortionRenderer_renderEyeToDisplay(
+            mDistortionRenderer, /* target_display = */ 0, /* x = */ 0, /* y = */ 0,
+            mScreenWidth, mScreenHeight, &mLeftEyeTextureDescription,
+            &mRightEyeTextureDescription);
+}
+
+void CubeRenderer::drawCube() {
     glUseProgram(mProgram);
 
     glm::vec3 axis(0.5f,1.0f,0.5f);
@@ -321,6 +365,8 @@ bool CubeRenderer::updateDeviceParams() {
 }
 
 void CubeRenderer::setupGL() {
+    mEglContext = eglGetCurrentContext();
+
     if (mFramebuffer != 0) {
         teardownGL();
     }
@@ -361,6 +407,8 @@ void CubeRenderer::setupGL() {
                            mDistortionTextureId, 0);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
                               GL_RENDERBUFFER, mDepthRenderBuffer);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void CubeRenderer::teardownGL() {
@@ -373,4 +421,17 @@ void CubeRenderer::teardownGL() {
     mFramebuffer = 0;
     glDeleteTextures(1, &mDistortionTextureId);
     mDistortionTextureId = 0;
+}
+
+Matrix4x4 CubeRenderer::getPose() {
+    std::array<float, 4> out_orientation;
+    std::array<float, 3> out_position;
+    CardboardHeadTracker_getPose(
+            mHeadTracker, GetBootTimeNano() + kPredictionTimeWithoutVsyncNanos,
+            kLandscapeLeft, &out_position[0], &out_orientation[0]);
+
+    Matrix4x4 mat4x4 = GetTranslationMatrix(out_position) *
+        Quatf::FromXYZW(&out_orientation[0]).ToMatrix();
+
+    return mat4x4;
 }
