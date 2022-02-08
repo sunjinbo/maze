@@ -16,6 +16,7 @@ public:
     virtual void destroy() = 0;
     virtual void resize(int w, int h) = 0;
     virtual void step() = 0;
+    virtual void switchViewer() = 0;
 };
 
 #endif //MAZE_RENDERER_H

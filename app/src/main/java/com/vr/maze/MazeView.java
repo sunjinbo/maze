@@ -45,7 +45,8 @@ class MazeView extends GLSurfaceView {
         setEGLConfigChooser(8, 8, 8, 0, 16, 0);
         setEGLContextClientVersion(3);
         setRenderer(new Renderer());
-        MazeJNILib.init();
+        setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
+        MazeJNILib.init(getContext());
     }
 
     private static class Renderer implements GLSurfaceView.Renderer {

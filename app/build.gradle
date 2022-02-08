@@ -18,7 +18,7 @@ android {
             }
         }
         ndk {
-            abiFilters 'armeabi-v7a'
+            abiFilters 'armeabi-v7a', 'arm64-v8a'
         }
     }
     buildTypes {
@@ -33,6 +33,10 @@ android {
             version '3.18.1'
             path 'src/main/cpp/CMakeLists.txt'
         }
+    }
+    compileOptions {
+        sourceCompatibility = '1.8'
+        targetCompatibility = '1.8'
     }
 }
 

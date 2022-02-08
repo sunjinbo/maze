@@ -116,7 +116,7 @@ static Renderer* g_renderer = NULL;
 
 extern "C" {
     JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved);
-    JNIEXPORT void JNICALL Java_com_vr_maze_MazeJNILib_init(JNIEnv* env, jobject obj);
+    JNIEXPORT void JNICALL Java_com_vr_maze_MazeJNILib_init(JNIEnv* env, jobject obj, jobject ctx);
     JNIEXPORT void JNICALL Java_com_vr_maze_MazeJNILib_create(JNIEnv* env, jobject obj);
     JNIEXPORT void JNICALL Java_com_vr_maze_MazeJNILib_resume(JNIEnv* env, jobject obj);
     JNIEXPORT void JNICALL Java_com_vr_maze_MazeJNILib_pause(JNIEnv* env, jobject obj);
@@ -132,7 +132,7 @@ static GLboolean gl3stubInit() {
 }
 #endif
 
-JavaVM* javaVm = nullptr;
+static JavaVM* javaVm = nullptr;
 
 JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* /*reserved*/) {
     javaVm = vm;
@@ -140,7 +140,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* /*reserved*/) {
 }
 
 JNIEXPORT void JNICALL
-Java_com_vr_maze_MazeJNILib_init(JNIEnv* env, jobject obj) {
+Java_com_vr_maze_MazeJNILib_init(JNIEnv* env, jobject obj, jobject ctx) {
     if (g_renderer) {
         delete g_renderer;
         g_renderer = NULL;
@@ -151,7 +151,7 @@ Java_com_vr_maze_MazeJNILib_init(JNIEnv* env, jobject obj) {
     printGlString("Renderer", GL_RENDERER);
     printGlString("Extensions", GL_EXTENSIONS);
 
-    g_renderer = RendererFactory::getRenderer(javaVm, obj);
+    g_renderer = RendererFactory::getRenderer(javaVm, ctx);
 }
 
 JNIEXPORT void JNICALL
@@ -201,5 +201,7 @@ Java_com_vr_maze_MazeJNILib_step(JNIEnv* env, jobject obj) {
 
 JNIEXPORT void JNICALL
 Java_com_vr_maze_MazeJNILib_switchViewer(JNIEnv* env, jobject obj) {
-
+    if (g_renderer) {
+        g_renderer->switchViewer();
+    }
 }

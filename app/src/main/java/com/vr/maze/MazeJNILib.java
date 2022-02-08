@@ -7,7 +7,7 @@ public class MazeJNILib {
           System.loadLibrary("gles3jni");
      }
 
-     public static native void init();
+     public static native void init(Object ctx);
      public static native void create();
      public static native void resume();
      public static native void pause();

@@ -19,6 +19,8 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 
+import com.google.cardboard.sdk.qrcode.CardboardParamsUtils;
+
 public class MazeActivity extends Activity implements PopupMenu.OnMenuItemClickListener {
 
     // Permission request codes
@@ -66,6 +68,8 @@ public class MazeActivity extends Activity implements PopupMenu.OnMenuItemClickL
             requestPermissions();
             return;
         }
+
+        byte[] array = CardboardParamsUtils.readDeviceParams(this);
 
         mView.resume();
     }

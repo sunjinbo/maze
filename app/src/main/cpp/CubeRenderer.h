@@ -27,6 +27,7 @@ public:
     virtual void destroy();
     virtual void resize(int w, int h);
     virtual void step();
+    virtual void switchViewer();
 
 private:
     bool updateDeviceParams();
@@ -73,6 +74,8 @@ private:
 
     float projection_matrices_[2][16];
     float eye_matrices_[2][16];
+
+    JavaVM* javaVm;
 };
 
 #endif //MAZE_CUBERENDERER_H

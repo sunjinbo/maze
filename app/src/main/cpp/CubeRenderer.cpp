@@ -5,7 +5,6 @@
 #include "gles3jni.h"
 #include "cardboard.h"
 #include "CubeRenderer.h"
-#include "util.h"
 
 #include <string.h>
 
@@ -207,11 +206,12 @@ void CubeRenderer::resume() {
     // Check for device parameters existence in external storage. If they're
     // missing, we must scan a Cardboard QR code and save the obtained parameters.
     uint8_t* buffer;
-    int size;
+    int size = 0;
     CardboardQrCode_getSavedDeviceParams(&buffer, &size);
     if (size == 0) {
-        CardboardQrCode_scanQrCodeAndSaveDeviceParams();
+        switchViewer();
     }
+
     CardboardQrCode_destroy(buffer);
 }
 
@@ -261,6 +261,10 @@ void CubeRenderer::step() {
     glBindVertexArray(mVAO);
     glDrawArrays(GL_LINES, 0, 24);
     glBindVertexArray(0);
+}
+
+void CubeRenderer::switchViewer() {
+    CardboardQrCode_scanQrCodeAndSaveDeviceParams();
 }
 
 bool CubeRenderer::updateDeviceParams() {
@@ -317,8 +321,6 @@ bool CubeRenderer::updateDeviceParams() {
 }
 
 void CubeRenderer::setupGL() {
-    LOGD("GL SETUP");
-
     if (mFramebuffer != 0) {
         teardownGL();
     }
@@ -351,7 +353,6 @@ void CubeRenderer::setupGL() {
     glBindRenderbuffer(GL_RENDERBUFFER, mDepthRenderBuffer);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, mScreenWidth,
                           mScreenHeight);
-    ndk_maze_cardboard::CHECKGLERROR("Create Render buffer");
 
     // Create render target.
     glGenFramebuffers(1, &mFramebuffer);
@@ -360,8 +361,6 @@ void CubeRenderer::setupGL() {
                            mDistortionTextureId, 0);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
                               GL_RENDERBUFFER, mDepthRenderBuffer);
-
-    ndk_maze_cardboard::CHECKGLERROR("GlSetup");
 }
 
 void CubeRenderer::teardownGL() {
@@ -374,6 +373,4 @@ void CubeRenderer::teardownGL() {
     mFramebuffer = 0;
     glDeleteTextures(1, &mDistortionTextureId);
     mDistortionTextureId = 0;
-
-    ndk_maze_cardboard::CHECKGLERROR("GlTeardown");
 }
