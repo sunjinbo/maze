@@ -198,6 +198,9 @@ bool CubeRenderer::create() {
 
     ALOGV("Using OpenGL ES 3.0 renderer");
 
+    // Target object first appears directly in front of user.
+    mCubeModelMatrix = GetTranslationMatrix({0.0f, 1.5f, kMinTargetDistance});
+
     return true;
 }
 
@@ -252,10 +255,9 @@ void CubeRenderer::step() {
     }
 
     // Update Head Pose.
-    mHeadView = getPose();
-
+    mHeadViewMatrix = getPose();
     // Incorporate the floor height into the head_view
-    mHeadView = mHeadView * GetTranslationMatrix({0.0f, kDefaultFloorHeight, 0.0f});
+    mHeadViewMatrix = mHeadViewMatrix * GetTranslationMatrix({0.0f, kDefaultFloorHeight, 0.0f});
 
     // Bind buffer
     glBindFramebuffer(GL_FRAMEBUFFER, mFramebuffer);
@@ -274,13 +276,12 @@ void CubeRenderer::step() {
                    mScreenHeight);
 
         Matrix4x4 eye_matrix = GetMatrixFromGlArray(eye_matrices_[eye]);
-        Matrix4x4 eye_view = eye_matrix * mHeadView;
+        Matrix4x4 eye_view = eye_matrix * mHeadViewMatrix;
 
-//        Matrix4x4 projection_matrix =
-//                Matrix4x4::GetMatrixFromGlArray(projection_matrices_[eye]);
-//        Matrix4x4 modelview_target = eye_view * model_target_;
-//        modelview_projection_target_ = projection_matrix * modelview_target;
-//        modelview_projection_room_ = projection_matrix * eye_view;
+        Matrix4x4 projection_matrix =
+                GetMatrixFromGlArray(projection_matrices_[eye]);
+        Matrix4x4 modelView = eye_view * mCubeModelMatrix;
+        mCubeModelViewProjectionMatrix = projection_matrix * modelView;
 
         // Draw cube
         drawCube();
@@ -296,6 +297,8 @@ void CubeRenderer::step() {
 void CubeRenderer::drawCube() {
     glUseProgram(mProgram);
 
+    std::array<float, 16> target_array = mCubeModelViewProjectionMatrix.ToGlArray();
+    mMVPMatrix = glm::make_mat4(target_array.data());
     glm::vec3 axis(0.5f,1.0f,0.5f);
     mMVPMatrix = glm::rotate(mMVPMatrix, 0.01f, axis);
 

@@ -78,7 +78,9 @@ private:
     float projection_matrices_[2][16];
     float eye_matrices_[2][16];
 
-    Matrix4x4 mHeadView;
+    Matrix4x4 mHeadViewMatrix;
+    Matrix4x4 mCubeModelMatrix;
+    Matrix4x4 mCubeModelViewProjectionMatrix;
 };
 
 #endif //MAZE_CUBERENDERER_H
