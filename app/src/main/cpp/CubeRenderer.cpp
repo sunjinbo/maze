@@ -268,7 +268,13 @@ void CubeRenderer::step() {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glClearColor(0.3, 0.3, 0.3, 1.0);
+
+    // Rotate cube
+    std::array<float, 16> target_array = mCubeModelMatrix.ToGlArray();
+    mMVPMatrix = glm::make_mat4(target_array.data());
+    glm::vec3 axis(0.5f,1.0f,0.5f);
+    mMVPMatrix = glm::rotate(mMVPMatrix, 0.01f, axis);
+    mCubeModelMatrix = GetMatrixFromGlArray(glm::value_ptr(mMVPMatrix));
 
     // Draw eyes views
     for (int eye = 0; eye < 2; ++eye) {
@@ -299,9 +305,7 @@ void CubeRenderer::drawCube() {
 
     std::array<float, 16> target_array = mCubeModelViewProjectionMatrix.ToGlArray();
     mMVPMatrix = glm::make_mat4(target_array.data());
-    glm::vec3 axis(0.5f,1.0f,0.5f);
-    mMVPMatrix = glm::rotate(mMVPMatrix, 0.01f, axis);
-
+    
     int uMatrixLocation = glGetUniformLocation(mProgram, "uMatrix");
     glUniformMatrix4fv(uMatrixLocation, 1, false, glm::value_ptr(mMVPMatrix));
 
